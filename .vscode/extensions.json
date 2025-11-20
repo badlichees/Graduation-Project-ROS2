@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "ms-iot.vscode-ros",          // 微软官方 ROS 插件
+        "ms-vscode.cpptools",         // C++ 智能提示
+        "ms-python.python",           // Python 支持
+        "twxs.cmake",                 // CMake 语法高亮
+        "ms-vscode.cmake-tools"       // CMake 工具
+    ]
+}
