@@ -1,33 +1,14 @@
-"""
-Ping Responder Node (ROS2)
-
-该节点用于Unity-ROS2延迟测试，订阅/ping主题并立即回复/pong，实现往返延迟测量。
-
-工作原理：
-  1. 接收来自Unity的ping消息（包含时间戳和序列号）
-  2. 立即将相同数据发布到/pong主题
-  3. Unity端计算发送与接收的时间差得到往返延迟
-
-主题：
-  订阅: /ping (std_msgs/Float32MultiArray)
-  发布: /pong (std_msgs/Float32MultiArray)
-
-消息格式：
-  data[0]: Unity时间戳（秒）
-  data[1]: 序列号（整数）
-
-注意：
-  - 时间戳基准为Unity游戏时间，与ROS2系统时钟存在差异
-  - 节点不修改时间戳，仅作转发，确保延迟计算准确
-"""
-
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
 
 
 class PingResponder(Node):
+    """
+    ping响应节点类，负责接收ping消息并回复pong消息，用于测量往返延迟。
+    """
     def __init__(self):
+        """初始化Ping响应节点。"""
         super().__init__('ping_responder')
         
         # 记录节点启动时间（秒，用于相对时间计算）

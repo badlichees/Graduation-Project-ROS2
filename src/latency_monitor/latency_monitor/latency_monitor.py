@@ -1,38 +1,22 @@
-"""
-Latency Monitor Node (ROS2)
-
-该节点用于监控Unity-ROS2通信的往返延迟，支持主动发送ping与被动监听pong两种模式。
-
-工作模式：
-  - 被动模式（默认）：仅订阅/pong主题，计算从Unity发送到ROS2再返回的延迟
-  - 主动模式（enable_ping:=True）：定期向/ping主题发送ping，测量ROS2节点间往返延迟
-
-参数：
-  - test_interval: 主动模式下发送ping的时间间隔（秒）
-  - enable_ping: 是否启用主动发送ping（默认False）
-
-主题：
-  发布: /ping (std_msgs/Float32MultiArray)
-  订阅: /pong (std_msgs/Float32MultiArray)
-
-消息格式：
-  data[0]: Unity时间戳（秒）
-  data[1]: 序列号（整数）
-
-注意：
-  - 在Unity-ROS2跨平台测试中，建议保持enable_ping:=False以避免干扰
-  - 延迟计算使用ROS2节点时钟，与Unity时钟基准不同
-"""
-
 import rclpy
 from rclpy.node import Node
-import time
-from std_msgs.msg import Float32MultiArray, String
-from std_msgs.msg import Header
-
+from std_msgs.msg import Float32MultiArray
 
 class LatencyMonitor(Node):
+    """
+    延迟监控节点类，发送ping消息并接收pong响应，计算时钟偏移和通信延迟
+    支持自动发送或被动监听模式
+
+    - test_interval: 自动发送ping的间隔时间（秒）
+    - enable_ping: 是否启用自动发送ping
+    - ping_time: 最近一次发送ping的时间戳（毫秒）
+    - sequence_number: 当前序列号，用于消息匹配
+    - last_received_sequence: 上次接收到的pong序列号，用于去重
+    """
     def __init__(self):
+        """
+        初始化延迟监控节点。
+        """
         super().__init__('latency_monitor')
         
         # 记录节点启动时间（秒，用于相对时间计算）
@@ -48,17 +32,14 @@ class LatencyMonitor(Node):
         )
         
         # 参数配置
-        self.declare_parameter('test_interval', 1.0)  # 测试间隔（秒）
-        self.declare_parameter('enable_ping', False)  # 是否启用自动发送ping
-        
+        self.declare_parameter('test_interval', 1.0)
+        self.declare_parameter('enable_ping', False)
         self.test_interval = self.get_parameter('test_interval').get_parameter_value().double_value
         self.enable_ping = self.get_parameter('enable_ping').get_parameter_value().bool_value
-        
-        # 状态变量
         self.ping_time = None
         self.sequence_number = 0
         self.timer = None
-        self.last_received_sequence = None  # 用于去重
+        self.last_received_sequence = None
         
         if self.enable_ping:
             self.timer = self.create_timer(self.test_interval, self.send_ping)
@@ -104,9 +85,8 @@ class LatencyMonitor(Node):
         else:
             self.get_logger().warning('Received invalid pong message')
 
-
 def main(args=None):
-    rclpy.init(args=args)
+    rclpy.init(args=args) # ROS2节点中，args会被传递给节点，用于初始化ROS2上下文
     
     latency_monitor = LatencyMonitor()
     
