@@ -2,3 +2,8 @@
 	path = src/extern/ros_tcp_endpoint
 	url = https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
 	branch = main-ros2
+
+[submodule "src/models/turtlebot3/meta_model/turtlebot3"]
+	path = src/models/turtlebot3/meta_model/turtlebot3
+	url = https://github.com/ROBOTIS-GIT/turtlebot3.git
+	branch = humble
