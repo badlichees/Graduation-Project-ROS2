@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -27,6 +28,7 @@ class DiffDriveController(Node):
         left_vel = (linear - angular * self.wheel_separation / 2.0) / self.wheel_radius
         right_vel = (linear + angular * self.wheel_separation / 2.0) / self.wheel_radius
         
+        # 发布左右轮速度
         self.pub_left.publish(Float64(data=left_vel))
         self.pub_right.publish(Float64(data=right_vel))
 
