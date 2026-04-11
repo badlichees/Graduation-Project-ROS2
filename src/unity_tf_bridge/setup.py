@@ -10,7 +10,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/unity_sim.launch.py']),
+        ('share/' + package_name + '/launch', [
+            'launch/unity_sim.launch.py',
+            'launch/unity_nav2.launch.py',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -22,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'odom_to_tf = unity_tf_bridge.odom_to_tf:main',
+            'map_relay  = unity_tf_bridge.map_relay:main',
         ],
     },
 )
