@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>unity_tf_bridge</name>
+  <name>tb3_unity_nav</name>
   <version>0.0.1</version>
-  <description>Bridge for Unity simulation to ROS2 TF tree</description>
+  <description>TurtleBot3 Unity simulation Nav2 bridge</description>
   <maintainer email="user@example.com">user</maintainer>
   <license>Apache 2.0</license>
 

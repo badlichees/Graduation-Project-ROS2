@@ -34,7 +34,7 @@ def generate_launch_description():
 
     # odom_to_tf节点（来自本包）
     odom_to_tf_node = Node(
-        package='unity_tf_bridge',
+        package='tb3_unity_nav',
         executable='odom_to_tf',
         output='screen',
         name='odom_to_tf'

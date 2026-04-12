@@ -1,8 +1,8 @@
 [submodule "src/turtlebot3"]
-	path = src/turtlebot3
+	path = src/third_party/turtlebot3
 	url = https://github.com/ROBOTIS-GIT/turtlebot3.git
 	branch = humble
 [submodule "src/ros_tcp_endpoint"]
-	path = src/ros_tcp_endpoint
+	path = src/third_party/ros_tcp_endpoint
 	url = https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
 	branch = main-ros2

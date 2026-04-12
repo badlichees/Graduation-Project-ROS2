@@ -12,6 +12,8 @@ Unity + Nav2 联合仿真主启动文件。
   6. nav2 navigation_launch — 全局/局部规划器、代价地图、BT导航（不含 AMCL / map_server）
   7. rviz2                  — 可视化
 
+差速运动学由 Unity TurtleBotController 直接完成（订阅 /cmd_vel），无需独立转换节点。
+
 不使用 AMCL 的原因：
   Unity DirectPhysics 里程计无累积误差，可直接作为定位来源。
   map→odom 发布恒等变换，机器人在地图中的位姿即里程计位姿。
@@ -57,7 +59,7 @@ def generate_launch_description():
     # ── 2 & 3. robot_state_publisher + odom_to_tf ───────────────────────────
     unity_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
-            get_package_share_directory('unity_tf_bridge'),
+            get_package_share_directory('tb3_unity_nav'),
             '/launch/unity_sim.launch.py',
         ]),
         launch_arguments={'use_sim_time': use_sim_time}.items(),
@@ -74,7 +76,7 @@ def generate_launch_description():
 
     # ── 5. map_relay（QoS 桥接）────────────────────────────────────────────
     map_relay = Node(
-        package='unity_tf_bridge',
+        package='tb3_unity_nav',
         executable='map_relay',
         name='map_relay',
         output='screen',
