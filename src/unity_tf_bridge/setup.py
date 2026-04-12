@@ -25,7 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'odom_to_tf = unity_tf_bridge.odom_to_tf:main',
-            'map_relay  = unity_tf_bridge.map_relay:main',
+            'map_relay = unity_tf_bridge.map_relay:main',
         ],
     },
 )
