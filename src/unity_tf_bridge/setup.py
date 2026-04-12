@@ -14,6 +14,10 @@ setup(
             'launch/unity_sim.launch.py',
             'launch/unity_nav2.launch.py',
         ]),
+        ('lib/' + package_name, [
+            'scripts/odom_to_tf',
+            'scripts/map_relay',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
