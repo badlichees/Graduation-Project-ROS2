@@ -17,9 +17,13 @@ setup(
         ('share/' + package_name + '/param', [
             'param/unity_nav2.yaml',
         ]),
+        ('share/' + package_name + '/behavior_trees', [
+            'behavior_trees/navigate_w_planner_selector.xml',
+        ]),
         ('lib/' + package_name, [
             'scripts/odom_to_tf',
             'scripts/map_relay',
+            'scripts/planner_selector_relay',
         ]),
     ],
     install_requires=['setuptools'],
@@ -33,6 +37,7 @@ setup(
         'console_scripts': [
             'odom_to_tf = tb3_unity_nav.odom_to_tf:main',
             'map_relay = tb3_unity_nav.map_relay:main',
+            'planner_selector_relay = tb3_unity_nav.planner_selector_relay:main',
         ],
     },
 )

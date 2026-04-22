@@ -1,0 +1,3 @@
+#!/usr/bin/env python3
+from tb3_unity_nav.planner_selector_relay import main
+main()

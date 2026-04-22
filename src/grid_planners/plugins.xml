@@ -1,0 +1,17 @@
+<library path="grid_planners">
+  <class name="grid_planners/AStarPlanner"
+         type="grid_planners::AStarPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>A* global path planner (octile heuristic, 8-connected grid)</description>
+  </class>
+  <class name="grid_planners/DijkstraPlanner"
+         type="grid_planners::DijkstraPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Dijkstra global path planner (zero heuristic, 8-connected grid)</description>
+  </class>
+  <class name="grid_planners/GBFSPlanner"
+         type="grid_planners::GBFSPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Greedy Best-First Search planner (heuristic only, 8-connected grid)</description>
+  </class>
+</library>

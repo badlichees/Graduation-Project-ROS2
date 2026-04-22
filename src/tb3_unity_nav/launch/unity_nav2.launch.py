@@ -61,6 +61,13 @@ def generate_launch_description():
         output='screen',
     )
 
+    planner_selector_relay = Node(
+        package='tb3_unity_nav',
+        executable='planner_selector_relay',
+        name='planner_selector_relay',
+        output='screen',
+    )
+
     nav2_navigation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             get_package_share_directory('nav2_bringup'),
@@ -91,6 +98,7 @@ def generate_launch_description():
         unity_sim,
         map_to_odom,
         map_relay,
+        planner_selector_relay,
         nav2_navigation,
         rviz2,
     ])
