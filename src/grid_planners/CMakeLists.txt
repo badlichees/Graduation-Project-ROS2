@@ -11,6 +11,7 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_library(grid_planners SHARED
   src/astar_planner.cpp
@@ -40,6 +41,7 @@ ament_target_dependencies(grid_planners
   geometry_msgs
   pluginlib
   tf2_ros
+  std_msgs
 )
 
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)

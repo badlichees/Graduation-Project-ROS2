@@ -1,9 +1,12 @@
 #include "grid_planners/dlite_planner.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <vector>
+
+#include "grid_planners/planner_stats.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -151,6 +154,7 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
       // Overconsistent: lower g[u] to rhs[u] and propagate.
       g_[u] = rhs_[u];
       pqPop();
+      ++expanded_count_;
       const int ux = u % W_, uy = u / W_;
       for (int d = 0; d < 8; ++d) {
         const int vx = ux + DX[d], vy = uy + DY[d];
@@ -161,6 +165,7 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
       // Underconsistent: raise g[u] to INF and propagate.
       g_[u] = INF;
       pqPop();
+      ++expanded_count_;
       updateVertex(u, cm);
       const int ux = u % W_, uy = u / W_;
       for (int d = 0; d < 8; ++d) {
@@ -204,6 +209,7 @@ void DLitePlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
   allow_unknown_ = node->get_parameter(name_ + ".allow_unknown").as_bool();
+  stats_pub_ = node->create_publisher<std_msgs::msg::String>("/planner_stats", rclcpp::QoS(10));
 
   RCLCPP_INFO(logger_, "DLitePlanner configured (allow_unknown=%s)",
               allow_unknown_ ? "true" : "false");
@@ -242,6 +248,9 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
     path.poses.push_back(goal);
     return path;
   }
+
+  const auto t0 = std::chrono::high_resolution_clock::now();
+  expanded_count_ = 0;
 
   const bool need_reinit = (W != W_ || N != N_ || new_goal != s_goal_ || s_goal_ == -1);
 
@@ -287,13 +296,20 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
   computeShortestPath(cm);
 
   if (g_[s_start_] >= INF) {
+    const double ms = std::chrono::duration<double, std::milli>(
+      std::chrono::high_resolution_clock::now() - t0).count();
+    publishPlannerStats(stats_pub_, name_, ms, 0.0, expanded_count_, false);
     RCLCPP_WARN(logger_, "D* Lite: no path from (%.2f,%.2f) to (%.2f,%.2f)",
                 start.pose.position.x, start.pose.position.y,
                 goal.pose.position.x,  goal.pose.position.y);
     return path;
   }
 
-  return extractPath(cm, path.header.frame_id, path.header.stamp);
+  auto result = extractPath(cm, path.header.frame_id, path.header.stamp);
+  const double ms = std::chrono::duration<double, std::milli>(
+    std::chrono::high_resolution_clock::now() - t0).count();
+  publishPlannerStats(stats_pub_, name_, ms, computePathLength(result), expanded_count_, true);
+  return result;
 }
 
 // ── extractPath: greedy descent along g-gradient toward s_goal_ ─────────────

@@ -1,11 +1,14 @@
 #include "grid_planners/jps_planner.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <queue>
 #include <tuple>
 #include <vector>
+
+#include "grid_planners/planner_stats.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -207,6 +210,11 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
     }
   }
 
+  const auto t0 = std::chrono::high_resolution_clock::now();
+  int nodes_expanded = 0;
+  bool found = false;
+  nav_msgs::msg::Path result;
+
   while (!open.empty()) {
     auto [f, cur, dx, dy] = open.top();
     open.pop();
@@ -216,9 +224,12 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
                                                     static_cast<int>(gy), W_)) {
       continue;
     }
+    ++nodes_expanded;
 
     if (cur == g_idx) {
-      return buildJPSPath(parent, g_idx, cm, path.header.frame_id, path.header.stamp);
+      result = buildJPSPath(parent, g_idx, cm, path.header.frame_id, path.header.stamp);
+      found = true;
+      break;
     }
 
     const int cx = cur % W_, cy = cur / W_;
@@ -262,10 +273,17 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
     }
   }
 
-  RCLCPP_WARN(logger_, "JPS: no path found from (%.2f,%.2f) to (%.2f,%.2f)",
-              start.pose.position.x, start.pose.position.y,
-              goal.pose.position.x, goal.pose.position.y);
-  return path;
+  const double ms = std::chrono::duration<double, std::milli>(
+    std::chrono::high_resolution_clock::now() - t0).count();
+  publishPlannerStats(stats_pub_, name_, ms, computePathLength(result), nodes_expanded, found);
+
+  if (!found) {
+    RCLCPP_WARN(logger_, "JPS: no path found from (%.2f,%.2f) to (%.2f,%.2f)",
+                start.pose.position.x, start.pose.position.y,
+                goal.pose.position.x, goal.pose.position.y);
+    return path;
+  }
+  return result;
 }
 
 }  // namespace grid_planners

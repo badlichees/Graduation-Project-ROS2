@@ -18,6 +18,7 @@
   <depend>geometry_msgs</depend>
   <depend>pluginlib</depend>
   <depend>tf2_ros</depend>
+  <depend>std_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

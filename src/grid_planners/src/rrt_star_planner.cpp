@@ -1,8 +1,11 @@
 #include "grid_planners/rrt_star_planner.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
+
+#include "grid_planners/planner_stats.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -43,6 +46,7 @@ void RRTStarPlanner::configure(
   goal_tolerance_ = node->get_parameter(name_ + ".goal_tolerance").as_double();
   goal_bias_      = node->get_parameter(name_ + ".goal_bias").as_double();
   allow_unknown_  = node->get_parameter(name_ + ".allow_unknown").as_bool();
+  stats_pub_ = node->create_publisher<std_msgs::msg::String>("/planner_stats", rclcpp::QoS(10));
 
   rng_.seed(std::random_device{}());
 
@@ -105,6 +109,7 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
   std::uniform_real_distribution<double> dist_01(0.0, 1.0);
 
   int goal_node_idx = -1;
+  const auto t0 = std::chrono::high_resolution_clock::now();
 
   for (int iter = 0; iter < max_iterations_; ++iter) {
     // Sample
@@ -187,6 +192,10 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
   }
 
   if (goal_node_idx == -1) {
+    const double ms = std::chrono::duration<double, std::milli>(
+      std::chrono::high_resolution_clock::now() - t0).count();
+    publishPlannerStats(stats_pub_, name_, ms, 0.0,
+                        static_cast<int>(nodes.size()), false);
     RCLCPP_WARN(logger_, "RRT* failed to reach goal after %d iterations", max_iterations_);
     return path;
   }
@@ -226,6 +235,10 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
     path.poses.push_back(pose);
   }
 
+  const double ms = std::chrono::duration<double, std::milli>(
+    std::chrono::high_resolution_clock::now() - t0).count();
+  publishPlannerStats(stats_pub_, name_, ms, computePathLength(path),
+                      static_cast<int>(nodes.size()), true);
   RCLCPP_INFO(logger_, "RRT* found path: %zu waypoints -> %zu interpolated poses",
     waypoints.size(), path.poses.size());
   return path;

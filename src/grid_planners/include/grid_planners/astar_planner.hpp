@@ -10,6 +10,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "tf2_ros/buffer.h"
 
 namespace grid_planners
@@ -57,6 +58,7 @@ protected:
   std::string name_;
   bool allow_unknown_{true};
   rclcpp::Logger logger_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr stats_pub_;
 };
 
 }  // namespace grid_planners

@@ -1,10 +1,13 @@
 #include "grid_planners/astar_planner.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <queue>
 #include <vector>
+
+#include "grid_planners/planner_stats.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -41,6 +44,7 @@ void AStarPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
   allow_unknown_ = node->get_parameter(name_ + ".allow_unknown").as_bool();
+  stats_pub_ = node->create_publisher<std_msgs::msg::String>("/planner_stats", rclcpp::QoS(10));
 
   RCLCPP_INFO(logger_, "AStarPlanner configured (allow_unknown=%s)",
               allow_unknown_ ? "true" : "false");
@@ -90,15 +94,23 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
   g_cost[s_idx] = 0.0f;
   open.push({this->priority(0.0f, this->heuristic(s_idx, static_cast<int>(gx), static_cast<int>(gy), W)), s_idx});
 
+  const auto t0 = std::chrono::high_resolution_clock::now();
+  int nodes_expanded = 0;
+  bool found = false;
+  nav_msgs::msg::Path result;
+
   while (!open.empty()) {
     const auto [f, cur] = open.top();
     open.pop();
 
     if (closed[cur]) continue;
     closed[cur] = true;
+    ++nodes_expanded;
 
     if (cur == g_idx) {
-      return buildPath(parent, g_idx, cm, path.header.frame_id, path.header.stamp);
+      result = buildPath(parent, g_idx, cm, path.header.frame_id, path.header.stamp);
+      found = true;
+      break;
     }
 
     const int cx = cur % W;
@@ -135,10 +147,17 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
     }
   }
 
-  RCLCPP_WARN(logger_, "A* could not find a path from (%.2f,%.2f) to (%.2f,%.2f)",
-              start.pose.position.x, start.pose.position.y,
-              goal.pose.position.x, goal.pose.position.y);
-  return path;
+  const double ms = std::chrono::duration<double, std::milli>(
+    std::chrono::high_resolution_clock::now() - t0).count();
+  publishPlannerStats(stats_pub_, name_, ms, computePathLength(result), nodes_expanded, found);
+
+  if (!found) {
+    RCLCPP_WARN(logger_, "A* could not find a path from (%.2f,%.2f) to (%.2f,%.2f)",
+                start.pose.position.x, start.pose.position.y,
+                goal.pose.position.x, goal.pose.position.y);
+    return path;
+  }
+  return result;
 }
 
 nav_msgs::msg::Path AStarPlanner::buildPath(
