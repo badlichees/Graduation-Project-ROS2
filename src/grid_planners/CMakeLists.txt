@@ -16,6 +16,10 @@ add_library(grid_planners SHARED
   src/astar_planner.cpp
   src/dijkstra_planner.cpp
   src/gbfs_planner.cpp
+  src/rrt_star_planner.cpp
+  src/dlite_planner.cpp
+  src/jps_planner.cpp
+  src/weighted_astar_planner.cpp
 )
 
 target_compile_features(grid_planners PUBLIC cxx_std_17)

@@ -14,4 +14,24 @@
          base_class_type="nav2_core::GlobalPlanner">
     <description>Greedy Best-First Search planner (heuristic only, 8-connected grid)</description>
   </class>
+  <class name="grid_planners/RRTStarPlanner"
+         type="grid_planners::RRTStarPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>RRT* sampling-based global path planner (asymptotically optimal)</description>
+  </class>
+  <class name="grid_planners/DLitePlanner"
+         type="grid_planners::DLitePlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>D* Lite incremental backward-search planner (Koenig &amp; Likhachev 2002)</description>
+  </class>
+  <class name="grid_planners/JPSPlanner"
+         type="grid_planners::JPSPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Jump Point Search planner (JPS, Harabor &amp; Grastien 2011) — pruned A* on uniform-cost grid</description>
+  </class>
+  <class name="grid_planners/WeightedAStarPlanner"
+         type="grid_planners::WeightedAStarPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Weighted A* (WA*): f = g + w*h; w=1 recovers A*, w→∞ approaches GBFS (ε-admissible)</description>
+  </class>
 </library>
