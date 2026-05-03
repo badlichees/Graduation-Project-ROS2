@@ -5,7 +5,7 @@
 namespace grid_planners
 {
 
-// Dijkstra = A* with zero heuristic. Guarantees optimal path; explores more nodes than A*.
+// 零启发式用于提供最稳的最优性基线，代价是展开更多节点
 class DijkstraPlanner : public AStarPlanner
 {
 public:
@@ -19,4 +19,4 @@ protected:
   }
 };
 
-}  // namespace grid_planners
+}

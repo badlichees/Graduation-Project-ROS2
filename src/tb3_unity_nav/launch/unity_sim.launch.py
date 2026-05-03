@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""启动 robot_state_publisher 和 odom_to_tf。"""
+"""启动 Unity 场景所需的机器人状态和 TF 桥接"""
 
 import os
 

@@ -24,4 +24,4 @@ void WeightedAStarPlanner::configure(
   RCLCPP_INFO(logger_, "WeightedAStarPlanner configured (w=%.2f)", w_);
 }
 
-}  // namespace grid_planners
+}

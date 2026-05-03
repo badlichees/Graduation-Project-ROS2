@@ -79,7 +79,6 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
   const double gx = goal.pose.position.x;
   const double gy = goal.pose.position.y;
 
-  // Validate start / goal
   unsigned int mx, my;
   if (!cm->worldToMap(sx, sy, mx, my) || !cm->worldToMap(gx, gy, mx, my)) {
     RCLCPP_WARN(logger_, "Start or goal out of costmap bounds");
@@ -91,7 +90,6 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
     return path;
   }
 
-  // Trivial case
   const double start_goal_dist = std::hypot(gx - sx, gy - sy);
   if (start_goal_dist < goal_tolerance_) {
     path.poses.push_back(start);
@@ -99,7 +97,6 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
     return path;
   }
 
-  // RRT* main loop
   std::vector<Node> nodes;
   nodes.reserve(static_cast<size_t>(max_iterations_) + 1);
   nodes.push_back({sx, sy, -1, 0.0});
@@ -111,8 +108,8 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
   int goal_node_idx = -1;
   const auto t0 = std::chrono::high_resolution_clock::now();
 
+  // 目标偏置保留随机探索，同时提高末端收敛机会
   for (int iter = 0; iter < max_iterations_; ++iter) {
-    // Sample
     double rx, ry;
     if (dist_01(rng_) < goal_bias_) {
       rx = gx; ry = gy;
@@ -121,12 +118,10 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       ry = dist_y(rng_);
     }
 
-    // Nearest node
     const int near_idx = nearestNode(nodes, rx, ry);
     const double nx = nodes[near_idx].x;
     const double ny = nodes[near_idx].y;
 
-    // Steer
     const double dx = rx - nx;
     const double dy = ry - ny;
     const double d  = std::hypot(dx, dy);
@@ -138,10 +133,8 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       new_y = ny + (dy / d) * step_size_;
     }
 
-    // Bounds check
     if (new_x < ox || new_x >= max_x || new_y < oy || new_y >= max_y) continue;
 
-    // Obstacle check at new node
     unsigned int nmx, nmy;
     if (!cm->worldToMap(new_x, new_y, nmx, nmy)) continue;
     const auto cell_cost = cm->getCost(nmx, nmy);
@@ -149,13 +142,11 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       if (!(cell_cost == nav2_costmap_2d::NO_INFORMATION && allow_unknown_)) continue;
     }
 
-    // Edge collision check
     if (!isCollisionFree(nx, ny, new_x, new_y)) continue;
 
-    // Near nodes for parent selection and rewiring
     const auto near_ids = nearNodes(nodes, new_x, new_y);
 
-    // Choose best parent
+    // 先选局部最优父节点，再反向重连邻域节点以逐步降低树代价
     int best_parent = near_idx;
     double best_cost = nodes[near_idx].cost + std::hypot(new_x - nx, new_y - ny);
     for (int nid : near_ids) {
@@ -166,11 +157,9 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       }
     }
 
-    // Add new node
     const int new_idx = static_cast<int>(nodes.size());
     nodes.push_back({new_x, new_y, best_parent, best_cost});
 
-    // Rewire
     for (int nid : near_ids) {
       const double new_cost =
         best_cost + std::hypot(new_x - nodes[nid].x, new_y - nodes[nid].y);
@@ -182,7 +171,6 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       }
     }
 
-    // Check goal reached
     const double dist_to_goal = std::hypot(new_x - gx, new_y - gy);
     if (dist_to_goal < goal_tolerance_) {
       if (goal_node_idx == -1 || best_cost < nodes[goal_node_idx].cost) {
@@ -200,7 +188,7 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
     return path;
   }
 
-  // Trace path from goal node back to root
+  // RRT* 只存父节点，路径需要从命中目标的节点反向回溯
   std::vector<std::pair<double, double>> waypoints;
   for (int idx = goal_node_idx; idx != -1; idx = nodes[idx].parent) {
     waypoints.push_back({nodes[idx].x, nodes[idx].y});
@@ -208,7 +196,7 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
   std::reverse(waypoints.begin(), waypoints.end());
   waypoints.push_back({gx, gy});
 
-  // Interpolate between waypoints at costmap resolution for smooth following
+  // 按地图分辨率补点，避免局部控制器面对过长直线段
   path.poses.reserve(waypoints.size() * static_cast<size_t>(step_size_ / res + 1));
   for (size_t i = 0; i + 1 < waypoints.size(); ++i) {
     const double x1 = waypoints[i].first,  y1 = waypoints[i].second;
@@ -225,7 +213,6 @@ nav_msgs::msg::Path RRTStarPlanner::createPlan(
       path.poses.push_back(pose);
     }
   }
-  // Final point
   {
     geometry_msgs::msg::PoseStamped pose;
     pose.header = path.header;
@@ -293,4 +280,4 @@ bool RRTStarPlanner::isCollisionFree(double x1, double y1, double x2, double y2)
   return true;
 }
 
-}  // namespace grid_planners
+}

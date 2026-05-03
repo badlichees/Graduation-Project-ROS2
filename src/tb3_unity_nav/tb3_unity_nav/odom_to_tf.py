@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""将 /odom 转为 TF。"""
+"""将 Unity 发布的 /odom 补成 Nav2 需要的 TF"""
 
 import rclpy
 from rclpy.node import Node
@@ -10,7 +10,7 @@ import tf2_ros
 
 
 class OdomToTf(Node):
-    """将里程计消息广播为 TF。"""
+    """复用里程计中的 frame，避免额外维护一份坐标关系"""
 
     def __init__(self):
         super().__init__('odom_to_tf')

@@ -18,7 +18,7 @@ PLUGINLIB_EXPORT_CLASS(grid_planners::AStarPlanner, nav2_core::GlobalPlanner)
 namespace grid_planners
 {
 
-// 8-connected grid: dx, dy, movement cost
+// 八邻接让代价模型和对角启发式保持一致
 static constexpr int DX[8]        = {-1,  0,  1, -1,  1, -1,  0,  1};
 static constexpr int DY[8]        = {-1, -1, -1,  0,  0,  1,  1,  1};
 static constexpr float STEP[8]    = {1.414f, 1.0f, 1.414f, 1.0f, 1.0f, 1.414f, 1.0f, 1.414f};
@@ -87,7 +87,7 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
   std::vector<int> parent(N, -1);
   std::vector<bool> closed(N, false);
 
-  // min-heap: (f, cell_index)
+  // 小根堆按策略给出的优先级扩展节点
   using Entry = std::pair<float, int>;
   std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
 
@@ -127,13 +127,13 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
       const unsigned char cost = cm->getCost(nx, ny);
       if (cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
         if (cost == nav2_costmap_2d::NO_INFORMATION && allow_unknown_) {
-          // treat as free but add a penalty
+          // 未知区域可通行但加惩罚，避免完全绕不开时直接失败
         } else {
           continue;
         }
       }
 
-      // scale costmap value into a small additive term (0–1 range)
+      // 代价地图只作为偏好项，主导代价仍然来自几何距离
       const float terrain = (cost == nav2_costmap_2d::NO_INFORMATION)
                             ? 0.5f
                             : 0.01f * static_cast<float>(cost);
@@ -194,4 +194,4 @@ nav_msgs::msg::Path AStarPlanner::buildPath(
   return path;
 }
 
-}  // namespace grid_planners
+}

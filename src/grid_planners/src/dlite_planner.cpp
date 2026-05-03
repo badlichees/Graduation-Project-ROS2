@@ -17,17 +17,16 @@ PLUGINLIB_EXPORT_CLASS(grid_planners::DLitePlanner, nav2_core::GlobalPlanner)
 namespace grid_planners
 {
 
-// ── ODR definitions for static constexpr members (C++14 compat) ────────────
+// 保留类内 constexpr 数组的定义，兼容较旧的编译模式
 constexpr float DLitePlanner::INF;
-constexpr int   DLitePlanner::DX[];
-constexpr int   DLitePlanner::DY[];
+constexpr int DLitePlanner::DX[];
+constexpr int DLitePlanner::DY[];
 constexpr float DLitePlanner::STEP[];
 
-// ── Constructor ─────────────────────────────────────────────────────────────
 DLitePlanner::DLitePlanner()
 : logger_(rclcpp::get_logger("DLitePlanner")) {}
 
-// ── Heuristic: octile distance (admissible for 8-connected grid) ────────────
+// 八邻接启发式必须低估真实代价，D* Lite 的一致性依赖这一点
 float DLitePlanner::h(int a, int b) const
 {
   const float dx = std::abs(static_cast<float>(a % W_) - static_cast<float>(b % W_));
@@ -35,7 +34,7 @@ float DLitePlanner::h(int a, int b) const
   return std::max(dx, dy) + (std::sqrt(2.0f) - 1.0f) * std::min(dx, dy);
 }
 
-// ── Edge cost: destination-based terrain penalty (matches A* implementation) ─
+// 与 A* 使用同一套代价偏好，便于横向比较不同规划器
 float DLitePlanner::edgeCost(int /*from*/, int to, int d,
                               nav2_costmap_2d::Costmap2D * cm) const
 {
@@ -49,14 +48,13 @@ float DLitePlanner::edgeCost(int /*from*/, int to, int d,
   return STEP[d] + 0.01f * static_cast<float>(cv);
 }
 
-// ── D* Lite key: [min(g,rhs)+h(s_start,s)+km, min(g,rhs)] ──────────────────
+// km 把起点移动折算进启发式，避免每次重规划都从零开始
 DLitePlanner::Key DLitePlanner::calcKey(int s) const
 {
   const float m = std::min(g_[s], rhs_[s]);
   return {m + h(s_start_, s) + km_, m};
 }
 
-// ── Priority-queue helpers ───────────────────────────────────────────────────
 void DLitePlanner::pqClean()
 {
   while (!pq_.empty() && pq_.top().ver != ver_[pq_.top().idx]) {
@@ -94,13 +92,13 @@ void DLitePlanner::pqInsert(int idx, Key k)
   pq_.push({k, idx, ver_[idx]});
 }
 
-// Logical removal: bumping the version invalidates any existing queue entry.
+// 版本号实现逻辑删除，绕开标准优先队列不能原地降低优先级的限制
 void DLitePlanner::pqRemove(int idx)
 {
   ++ver_[idx];
 }
 
-// ── UpdateVertex: recompute rhs[u] then manage queue membership ─────────────
+// rhs 表示一步前瞻代价，只有 g 与 rhs 不一致的节点才需要进入队列
 void DLitePlanner::updateVertex(int u, nav2_costmap_2d::Costmap2D * cm)
 {
   if (u != s_goal_) {
@@ -122,10 +120,7 @@ void DLitePlanner::updateVertex(int u, nav2_costmap_2d::Costmap2D * cm)
   }
 }
 
-// ── ComputeShortestPath: main D* Lite loop ───────────────────────────────────
-//
-// Invariant on exit: g[s_start] = rhs[s_start] = optimal cost (or INF if
-// unreachable), and all cells on the optimal path are locally consistent.
+// 循环结束时起点局部一致，当前最优路径上的代价已经被传播到位
 void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
 {
   const int max_iter = N_ * 5;
@@ -135,7 +130,7 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
     const Key top_key  = pqTopKey();
     const Key s_key    = calcKey(s_start_);
 
-    // Termination: top key is not smaller than start's key AND start is consistent.
+    // 队首不再优于起点且起点一致时，继续展开不会改善当前路径
     if (!(top_key < s_key) && rhs_[s_start_] == g_[s_start_]) { break; }
 
     if (++iter > max_iter) {
@@ -147,11 +142,11 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
     const Key  k_new = calcKey(u);
 
     if (top_key < k_new) {
-      // Key has gone stale (increased); re-insert with corrected key.
+      // 地图或起点变化后旧 key 可能失效，重新入队即可
       pqPop();
       pqInsert(u, k_new);
     } else if (g_[u] > rhs_[u]) {
-      // Overconsistent: lower g[u] to rhs[u] and propagate.
+      // 代价变好时把 g 下调，并向前驱传播收益
       g_[u] = rhs_[u];
       pqPop();
       ++expanded_count_;
@@ -162,7 +157,7 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
         updateVertex(vy * W_ + vx, cm);
       }
     } else {
-      // Underconsistent: raise g[u] to INF and propagate.
+      // 代价变差时先抬高 g，再让邻域重新寻找替代路径
       g_[u] = INF;
       pqPop();
       ++expanded_count_;
@@ -177,7 +172,7 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
   }
 }
 
-// ── Full initialisation (called when goal changes or on first use) ───────────
+// 目标变化会让反向搜索树失效，此时完整重建比修补更清晰
 void DLitePlanner::initDLite(int goal_idx, nav2_costmap_2d::Costmap2D * cm)
 {
   s_goal_ = goal_idx;
@@ -194,7 +189,6 @@ void DLitePlanner::initDLite(int goal_idx, nav2_costmap_2d::Costmap2D * cm)
   prev_cm_.assign(data, data + N_);
 }
 
-// ── configure ───────────────────────────────────────────────────────────────
 void DLitePlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name,
@@ -215,7 +209,6 @@ void DLitePlanner::configure(
               allow_unknown_ ? "true" : "false");
 }
 
-// ── createPlan ───────────────────────────────────────────────────────────────
 nav_msgs::msg::Path DLitePlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
@@ -264,13 +257,12 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
     RCLCPP_INFO(logger_, "D* Lite: full init (goal=%s)",
                 (new_goal != s_goal_) ? "changed" : "first run");
   } else {
-    // ── Incremental update ─────────────────────────────────────────────────
-    // Account for the robot having moved since the last call.
+    // 起点移动只需要更新 km，保留已有反向搜索结果
     km_     += h(s_last_, new_start);
     s_last_  = new_start;
     s_start_ = new_start;
 
-    // Find cells whose costmap cost changed and propagate.
+    // 只把变化栅格及其邻域重新入队，D* Lite 的优势在这里体现
     const unsigned char * cur_data = cm->getCharMap();
     int changes = 0;
     for (int i = 0; i < N_; ++i) {
@@ -312,7 +304,7 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
   return result;
 }
 
-// ── extractPath: greedy descent along g-gradient toward s_goal_ ─────────────
+// 从起点沿 g 梯度贪心下降，局部一致性保证这条链指向目标
 nav_msgs::msg::Path DLitePlanner::extractPath(
   nav2_costmap_2d::Costmap2D * cm,
   const std::string & frame_id,
@@ -377,4 +369,4 @@ nav_msgs::msg::Path DLitePlanner::extractPath(
   return path;
 }
 
-}  // namespace grid_planners
+}

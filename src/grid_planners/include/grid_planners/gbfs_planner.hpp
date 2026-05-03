@@ -5,8 +5,7 @@
 namespace grid_planners
 {
 
-// Greedy Best-First Search: f = h only, ignores path cost.
-// Fastest to reach goal but does NOT guarantee an optimal path.
+// 只看启发式，适合做最快响应的对照组，不保证路径最优
 class GBFSPlanner : public AStarPlanner
 {
 public:
@@ -17,4 +16,4 @@ protected:
   float priority(float /*g*/, float h) const override { return h; }
 };
 
-}  // namespace grid_planners
+}

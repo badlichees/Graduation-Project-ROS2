@@ -18,8 +18,6 @@ PLUGINLIB_EXPORT_CLASS(grid_planners::JPSPlanner, nav2_core::GlobalPlanner)
 namespace grid_planners
 {
 
-// ─── Obstacle check ───────────────────────────────────────────────────────────
-
 bool JPSPlanner::blocked(int x, int y, nav2_costmap_2d::Costmap2D * cm) const
 {
   if (x < 0 || y < 0 || x >= W_ || y >= H_) return true;
@@ -31,19 +29,7 @@ bool JPSPlanner::blocked(int x, int y, nav2_costmap_2d::Costmap2D * cm) const
   return false;
 }
 
-// ─── Jump function ────────────────────────────────────────────────────────────
-//
-// Jump from (x,y) one step at a time in direction (dx,dy).
-// Returns grid index ny*W+nx of the first jump point encountered, or -1.
-//
-// A jump point is a node that:
-//   (a) equals the goal, or
-//   (b) has at least one "forced" neighbor — a neighbor that cannot be
-//       reached optimally without passing through this node.
-//
-// For diagonal jumps, also recursively jump in the two cardinal components;
-// if either returns a jump point the current node is itself a jump point.
-
+// 跳点只在目标或强迫邻居处停下，跳过对最短路没有区分度的对称节点
 int JPSPlanner::jump(
   int x, int y, int dx, int dy, int gx, int gy,
   nav2_costmap_2d::Costmap2D * cm) const
@@ -56,27 +42,22 @@ int JPSPlanner::jump(
 
     if (nx == gx && ny == gy) return ny * W_ + nx;
 
-    // ── Forced-neighbor detection ──────────────────────────────────────────
     if (dx != 0 && dy != 0) {
-      // Diagonal movement
-      // Forced if wall on side perpendicular to one component
+      // 对角跳跃还要检查两个正交方向，保证不会错过被障碍逼出的转折点
       if ((!blocked(nx - dx, ny + dy, cm) && blocked(nx - dx, ny, cm)) ||
           (!blocked(nx + dx, ny - dy, cm) && blocked(nx, ny - dy, cm))) {
         return ny * W_ + nx;
       }
-      // Also jump along each cardinal component; if found, this is a JP
       if (jump(nx, ny, dx, 0, gx, gy, cm) != -1 ||
           jump(nx, ny, 0, dy, gx, gy, cm) != -1) {
         return ny * W_ + nx;
       }
     } else if (dx != 0) {
-      // Horizontal movement
       if ((!blocked(nx + dx, ny + 1, cm) && blocked(nx, ny + 1, cm)) ||
           (!blocked(nx + dx, ny - 1, cm) && blocked(nx, ny - 1, cm))) {
         return ny * W_ + nx;
       }
     } else {
-      // Vertical movement
       if ((!blocked(nx + 1, ny + dy, cm) && blocked(nx + 1, ny, cm)) ||
           (!blocked(nx - 1, ny + dy, cm) && blocked(nx - 1, ny, cm))) {
         return ny * W_ + nx;
@@ -88,11 +69,7 @@ int JPSPlanner::jump(
   }
 }
 
-// ─── Path builder ─────────────────────────────────────────────────────────────
-//
-// JPS parent[] maps only jump points. Reconstruct the full cell-by-cell
-// path by walking straight lines between consecutive jump points.
-
+// JPS 父链只记录跳点，发布给 Nav2 前需要补回连续栅格
 nav_msgs::msg::Path JPSPlanner::buildJPSPath(
   const std::vector<int> & parent,
   int goal_idx,
@@ -100,7 +77,6 @@ nav_msgs::msg::Path JPSPlanner::buildJPSPath(
   const std::string & frame_id,
   const rclcpp::Time & stamp)
 {
-  // Collect jump-point indices from goal back to start
   std::vector<int> jps;
   for (int idx = goal_idx; idx != -1; idx = parent[idx]) {
     jps.push_back(idx);
@@ -125,7 +101,6 @@ nav_msgs::msg::Path JPSPlanner::buildJPSPath(
   if (jps.empty()) return path;
   appendCell(jps.front());
 
-  // Interpolate along each straight segment between consecutive jump points
   for (size_t i = 1; i < jps.size(); ++i) {
     int ax = jps[i - 1] % W_,  ay = jps[i - 1] / W_;
     int bx = jps[i]     % W_,  by = jps[i]     / W_;
@@ -144,8 +119,6 @@ nav_msgs::msg::Path JPSPlanner::buildJPSPath(
 
   return path;
 }
-
-// ─── Main search ─────────────────────────────────────────────────────────────
 
 nav_msgs::msg::Path JPSPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
@@ -184,14 +157,14 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
   std::vector<float> g_cost(N, INF);
   std::vector<int>   parent(N, -1);
 
-  // Open list: (f, cell_index, dx, dy) — dy is the incoming direction
+  // 队列保留入射方向，后续才能按 JPS 规则剪枝邻居方向
   using Entry = std::tuple<float, int, int, int>;
   std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> open;
 
   static constexpr int DX8[8] = {-1, 0, 1, -1, 1, -1, 0,  1};
   static constexpr int DY8[8] = {-1,-1,-1,  0, 0,  1, 1,  1};
 
-  // Seed: jump from start in all 8 directions
+  // 起点没有入射方向，先向八个方向各跳一次作为搜索入口
   g_cost[s_idx] = 0.0f;
   for (int d = 0; d < 8; ++d) {
     const int jp = jump(static_cast<int>(sx), static_cast<int>(sy),
@@ -219,7 +192,7 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
     auto [f, cur, dx, dy] = open.top();
     open.pop();
 
-    // Lazy duplicate check: skip if we already found a better path to cur
+    // 懒删除避免在优先队列中做昂贵的定点更新
     if (g_cost[cur] + 1e-5f < f - heuristic(cur, static_cast<int>(gx),
                                                     static_cast<int>(gy), W_)) {
       continue;
@@ -235,7 +208,6 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
     const int cx = cur % W_, cy = cur / W_;
     const float g = g_cost[cur];
 
-    // Lambda: try to jump in (ndx,ndy) and add result to open list
     auto tryJump = [&](int ndx, int ndy) {
       const int jp = jump(cx, cy, ndx, ndy,
                           static_cast<int>(gx), static_cast<int>(gy), cm);
@@ -252,21 +224,18 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
       }
     };
 
-    // Pruned neighbor directions based on incoming direction (dx, dy)
+    // 只保留自然邻居和强迫邻居，减少与 A* 等价的重复展开
     if (dx != 0 && dy != 0) {
-      // Diagonal: natural = (dx,0), (0,dy), (dx,dy); forced depend on walls
       tryJump(dx, 0);
       tryJump(0, dy);
       tryJump(dx, dy);
       if (blocked(cx - dx, cy, cm))     tryJump(-dx, dy);
       if (blocked(cx, cy - dy, cm))     tryJump(dx, -dy);
     } else if (dx != 0) {
-      // Horizontal: natural = (dx,0); forced if wall above/below
       tryJump(dx, 0);
       if (blocked(cx, cy + 1, cm))  tryJump(dx, +1);
       if (blocked(cx, cy - 1, cm))  tryJump(dx, -1);
     } else {
-      // Vertical: natural = (0,dy); forced if wall left/right
       tryJump(0, dy);
       if (blocked(cx + 1, cy, cm))  tryJump(+1, dy);
       if (blocked(cx - 1, cy, cm))  tryJump(-1, dy);
@@ -286,4 +255,4 @@ nav_msgs::msg::Path JPSPlanner::createPlan(
   return result;
 }
 
-}  // namespace grid_planners
+}

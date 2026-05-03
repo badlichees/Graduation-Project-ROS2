@@ -5,13 +5,7 @@
 namespace grid_planners
 {
 
-// Weighted A*: f = g + w * h
-//
-// w = 1  → standard A* (optimal)
-// w > 1  → suboptimal but faster; path cost ≤ w * optimal (ε-admissible)
-// w → ∞  → degenerates to GBFS
-//
-// Configure via yaml:  weight: 2.0  (default)
+// 用启发式权重换速度，w 越大越贪心，最优性让位给响应时间
 class WeightedAStarPlanner : public AStarPlanner
 {
 public:
@@ -31,4 +25,4 @@ private:
   float w_{2.0f};
 };
 
-}  // namespace grid_planners
+}

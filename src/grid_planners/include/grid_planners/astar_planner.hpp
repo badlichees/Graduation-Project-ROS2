@@ -39,11 +39,10 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
-  // Returns heuristic estimate from cell `idx` to goal (gx, gy) on a grid of width W.
+  // 默认使用八邻接可采纳启发式，派生类可改变搜索策略
   virtual float heuristic(int idx, int gx, int gy, int W) const;
 
-  // Returns priority (f-value) for the open-list heap.
-  // Default: f = g + h  (A*).  Override for other search strategies.
+  // 只改 priority 就能复用同一套展开和回溯逻辑
   virtual float priority(float g, float h) const { return g + h; }
 
   nav_msgs::msg::Path buildPath(
@@ -61,4 +60,4 @@ protected:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr stats_pub_;
 };
 
-}  // namespace grid_planners
+}

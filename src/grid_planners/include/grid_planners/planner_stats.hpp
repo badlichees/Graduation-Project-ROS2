@@ -43,4 +43,4 @@ inline void publishPlannerStats(
   pub->publish(msg);
 }
 
-}  // namespace grid_planners
+}

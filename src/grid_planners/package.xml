@@ -4,7 +4,7 @@
   <name>grid_planners</name>
   <version>0.1.0</version>
   <description>Grid-based global planner plugins for Nav2 (A*, Dijkstra, ...)</description>
-  <maintainer email="liuzhili86@gmail.com">liuzh</maintainer>
+  <maintainer email="liuzhili86@gmail.com">liuzhili</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

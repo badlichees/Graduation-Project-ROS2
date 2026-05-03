@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""启动 Unity + Nav2 测试栈。"""
+"""启动 Unity 与 Nav2 联调栈"""
 
 import os
 

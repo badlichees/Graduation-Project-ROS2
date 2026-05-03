@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""将 /map_raw 转发为 Nav2 可用的 /map。"""
+"""将 /map_raw 转发为 Nav2 可用的 /map"""
 
 import rclpy
 from rclpy.node import Node
@@ -9,7 +9,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoS
 
 
 class MapRelay(Node):
-    """将 OccupancyGrid 转发到 transient_local 话题。"""
+    """用 transient_local 保留最后一张地图，避免 Nav2 后启动时拿不到地图"""
 
     def __init__(self):
         super().__init__('map_relay')

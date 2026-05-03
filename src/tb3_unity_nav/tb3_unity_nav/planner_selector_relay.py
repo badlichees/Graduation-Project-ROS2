@@ -5,7 +5,7 @@ from std_msgs.msg import String
 
 
 class PlannerSelectorRelay(Node):
-    """Bridge Unity's volatile /planner_selector_unity to Nav2's transient_local /planner_selector."""
+    """把 Unity 的普通选择消息转成 Nav2 可保留的 planner_selector"""
 
     def __init__(self):
         super().__init__('planner_selector_relay')
