@@ -278,7 +278,7 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
         }
       }
     }
-    std::copy(cur_data, cur_data + N_, prev_cm_.begin());
+    prev_cm_.assign(cur_data, cur_data + N_);
 
     if (changes > 0) {
       RCLCPP_INFO(logger_, "D* Lite: %d changed costmap cells, replanning", changes);
