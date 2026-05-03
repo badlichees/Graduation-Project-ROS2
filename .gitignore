@@ -10,10 +10,10 @@
 !.gitignore
 
 # 保留说明文档
-!README.md          
+!README.md
 
 # 如有开源协议
-!LICENSE            
+!LICENSE
 
 # -------------------
 # ROS2 构建产物 (核心垃圾)
