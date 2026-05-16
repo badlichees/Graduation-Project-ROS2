@@ -9,11 +9,16 @@ namespace grid_planners
 class GBFSPlanner : public AStarPlanner
 {
 public:
-  GBFSPlanner() : AStarPlanner("GBFSPlanner") {}
+  GBFSPlanner()
+  : AStarPlanner("GBFSPlanner")
+  {}
   ~GBFSPlanner() override = default;
 
 protected:
-  float priority(float /*g*/, float h) const override { return h; }
+  float priority(float /*g*/, float h) const override
+  {
+    return h;
+  }
 };
 
-}
+}  // namespace grid_planners

@@ -23,24 +23,21 @@ inline double computePathLength(const nav_msgs::msg::Path & path)
   return len;
 }
 
-inline void publishPlannerStats(
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr & pub,
-  const std::string & algorithm,
-  double plan_time_ms,
-  double path_length_m,
-  int nodes_expanded,
+inline void publishPlannerStats(rclcpp::Publisher<std_msgs::msg::String>::SharedPtr & pub,
+  const std::string & algorithm, double plan_time_ms, double path_length_m, int nodes_expanded,
   bool path_found)
 {
-  if (!pub) return;
+  if (!pub) {
+    return;
+  }
   char buf[256];
   snprintf(buf, sizeof(buf),
     "{\"algorithm\":\"%s\",\"plan_time_ms\":%.2f,"
     "\"path_length_m\":%.3f,\"nodes_expanded\":%d,\"path_found\":%s}",
-    algorithm.c_str(), plan_time_ms, path_length_m, nodes_expanded,
-    path_found ? "true" : "false");
+    algorithm.c_str(), plan_time_ms, path_length_m, nodes_expanded, path_found ? "true" : "false");
   std_msgs::msg::String msg;
   msg.data = buf;
   pub->publish(msg);
 }
 
-}
+}  // namespace grid_planners

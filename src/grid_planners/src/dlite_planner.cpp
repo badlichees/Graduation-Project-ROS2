@@ -6,11 +6,11 @@
 #include <limits>
 #include <vector>
 
-#include "grid_planners/planner_stats.hpp"
-
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+
+#include "grid_planners/planner_stats.hpp"
 
 PLUGINLIB_EXPORT_CLASS(grid_planners::DLitePlanner, nav2_core::GlobalPlanner)
 
@@ -24,7 +24,8 @@ constexpr int DLitePlanner::DY[];
 constexpr float DLitePlanner::STEP[];
 
 DLitePlanner::DLitePlanner()
-: logger_(rclcpp::get_logger("DLitePlanner")) {}
+: logger_(rclcpp::get_logger("DLitePlanner"))
+{}
 
 // 八邻接启发式必须低估真实代价，D* Lite 的一致性依赖这一点
 float DLitePlanner::h(int a, int b) const
@@ -35,8 +36,7 @@ float DLitePlanner::h(int a, int b) const
 }
 
 // 与 A* 使用同一套代价偏好，便于横向比较不同规划器
-float DLitePlanner::edgeCost(int /*from*/, int to, int d,
-                              nav2_costmap_2d::Costmap2D * cm) const
+float DLitePlanner::edgeCost(int /*from*/, int to, int d, nav2_costmap_2d::Costmap2D * cm) const
 {
   const unsigned char cv = cm->getCost(to % W_, to / W_);
   if (cv >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
@@ -83,7 +83,9 @@ int DLitePlanner::pqTopIdx()
 void DLitePlanner::pqPop()
 {
   pqClean();
-  if (!pq_.empty()) { pq_.pop(); }
+  if (!pq_.empty()) {
+    pq_.pop();
+  }
 }
 
 void DLitePlanner::pqInsert(int idx, Key k)
@@ -106,7 +108,9 @@ void DLitePlanner::updateVertex(int u, nav2_costmap_2d::Costmap2D * cm)
     const int ux = u % W_, uy = u / W_;
     for (int d = 0; d < 8; ++d) {
       const int vx = ux + DX[d], vy = uy + DY[d];
-      if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) { continue; }
+      if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) {
+        continue;
+      }
       const int v = vy * W_ + vx;
       const float c = edgeCost(u, v, d, cm);
       if (c < INF && g_[v] < INF) {
@@ -127,19 +131,21 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
   int iter = 0;
 
   while (!pqEmpty()) {
-    const Key top_key  = pqTopKey();
-    const Key s_key    = calcKey(s_start_);
+    const Key top_key = pqTopKey();
+    const Key s_key = calcKey(s_start_);
 
     // 队首不再优于起点且起点一致时，继续展开不会改善当前路径
-    if (!(top_key < s_key) && rhs_[s_start_] == g_[s_start_]) { break; }
+    if (!(top_key < s_key) && rhs_[s_start_] == g_[s_start_]) {
+      break;
+    }
 
     if (++iter > max_iter) {
       RCLCPP_WARN(logger_, "D* Lite: safety limit reached (%d iter)", max_iter);
       break;
     }
 
-    const int  u     = pqTopIdx();
-    const Key  k_new = calcKey(u);
+    const int u = pqTopIdx();
+    const Key k_new = calcKey(u);
 
     if (top_key < k_new) {
       // 地图或起点变化后旧 key 可能失效，重新入队即可
@@ -153,7 +159,9 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
       const int ux = u % W_, uy = u / W_;
       for (int d = 0; d < 8; ++d) {
         const int vx = ux + DX[d], vy = uy + DY[d];
-        if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) { continue; }
+        if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) {
+          continue;
+        }
         updateVertex(vy * W_ + vx, cm);
       }
     } else {
@@ -165,7 +173,9 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
       const int ux = u % W_, uy = u / W_;
       for (int d = 0; d < 8; ++d) {
         const int vx = ux + DX[d], vy = uy + DY[d];
-        if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) { continue; }
+        if (vx < 0 || vy < 0 || vx >= W_ || vy >= H_) {
+          continue;
+        }
         updateVertex(vy * W_ + vx, cm);
       }
     }
@@ -176,9 +186,9 @@ void DLitePlanner::computeShortestPath(nav2_costmap_2d::Costmap2D * cm)
 void DLitePlanner::initDLite(int goal_idx, nav2_costmap_2d::Costmap2D * cm)
 {
   s_goal_ = goal_idx;
-  km_     = 0.0f;
-  pq_     = MinPQ{};
-  g_.assign(N_,   INF);
+  km_ = 0.0f;
+  pq_ = MinPQ{};
+  g_.assign(N_, INF);
   rhs_.assign(N_, INF);
   ver_.assign(N_, 0);
 
@@ -189,37 +199,33 @@ void DLitePlanner::initDLite(int goal_idx, nav2_costmap_2d::Costmap2D * cm)
   prev_cm_.assign(data, data + N_);
 }
 
-void DLitePlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name,
-  std::shared_ptr<tf2_ros::Buffer> /*tf*/,
+void DLitePlanner::configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  std::string name, std::shared_ptr<tf2_ros::Buffer> /*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  node_        = parent;
-  name_        = name;
+  node_ = parent;
+  name_ = name;
   costmap_ros_ = costmap_ros;
 
   auto node = node_.lock();
-  nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(node, name_ + ".allow_unknown",
+    rclcpp::ParameterValue(true));
   allow_unknown_ = node->get_parameter(name_ + ".allow_unknown").as_bool();
   stats_pub_ = node->create_publisher<std_msgs::msg::String>("/planner_stats", rclcpp::QoS(10));
 
   RCLCPP_INFO(logger_, "DLitePlanner configured (allow_unknown=%s)",
-              allow_unknown_ ? "true" : "false");
+    allow_unknown_ ? "true" : "false");
 }
 
-nav_msgs::msg::Path DLitePlanner::createPlan(
-  const geometry_msgs::msg::PoseStamped & start,
+nav_msgs::msg::Path DLitePlanner::createPlan(const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   nav_msgs::msg::Path path;
   path.header.frame_id = goal.header.frame_id;
-  path.header.stamp    = node_.lock()->now();
+  path.header.stamp = node_.lock()->now();
 
-  RCLCPP_INFO(logger_, "createPlan called: (%.2f,%.2f) -> (%.2f,%.2f)",
-              start.pose.position.x, start.pose.position.y,
-              goal.pose.position.x,  goal.pose.position.y);
+  RCLCPP_INFO(logger_, "createPlan called: (%.2f,%.2f) -> (%.2f,%.2f)", start.pose.position.x,
+    start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
 
   auto * cm = costmap_ros_->getCostmap();
   const int W = static_cast<int>(cm->getSizeInCellsX());
@@ -227,15 +233,14 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
   const int N = W * H;
 
   unsigned int sx, sy, gx, gy;
-  if (!cm->worldToMap(start.pose.position.x, start.pose.position.y, sx, sy) ||
-      !cm->worldToMap(goal.pose.position.x,  goal.pose.position.y,  gx, gy))
-  {
+  if (!cm->worldToMap(start.pose.position.x, start.pose.position.y, sx, sy)
+    || !cm->worldToMap(goal.pose.position.x, goal.pose.position.y, gx, gy)) {
     RCLCPP_WARN(logger_, "Start or goal out of costmap bounds");
     return path;
   }
 
   const int new_start = static_cast<int>(sy) * W + static_cast<int>(sx);
-  const int new_goal  = static_cast<int>(gy) * W + static_cast<int>(gx);
+  const int new_goal = static_cast<int>(gy) * W + static_cast<int>(gx);
 
   if (new_start == new_goal) {
     path.poses.push_back(goal);
@@ -252,14 +257,14 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
     H_ = H;
     N_ = N;
     s_start_ = new_start;
-    s_last_  = new_start;
+    s_last_ = new_start;
     initDLite(new_goal, cm);
     RCLCPP_INFO(logger_, "D* Lite: full init (goal=%s)",
-                (new_goal != s_goal_) ? "changed" : "first run");
+      (new_goal != s_goal_) ? "changed" : "first run");
   } else {
     // 起点移动只需要更新 km，保留已有反向搜索结果
-    km_     += h(s_last_, new_start);
-    s_last_  = new_start;
+    km_ += h(s_last_, new_start);
+    s_last_ = new_start;
     s_start_ = new_start;
 
     // 只把变化栅格及其邻域重新入队，D* Lite 的优势在这里体现
@@ -288,34 +293,33 @@ nav_msgs::msg::Path DLitePlanner::createPlan(
   computeShortestPath(cm);
 
   if (g_[s_start_] >= INF) {
-    const double ms = std::chrono::duration<double, std::milli>(
-      std::chrono::high_resolution_clock::now() - t0).count();
+    const double ms =
+      std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - t0)
+        .count();
     publishPlannerStats(stats_pub_, name_, ms, 0.0, expanded_count_, false);
-    RCLCPP_WARN(logger_, "D* Lite: no path from (%.2f,%.2f) to (%.2f,%.2f)",
-                start.pose.position.x, start.pose.position.y,
-                goal.pose.position.x,  goal.pose.position.y);
+    RCLCPP_WARN(logger_, "D* Lite: no path from (%.2f,%.2f) to (%.2f,%.2f)", start.pose.position.x,
+      start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
     return path;
   }
 
   auto result = extractPath(cm, path.header.frame_id, path.header.stamp);
-  const double ms = std::chrono::duration<double, std::milli>(
-    std::chrono::high_resolution_clock::now() - t0).count();
+  const double ms =
+    std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - t0)
+      .count();
   publishPlannerStats(stats_pub_, name_, ms, computePathLength(result), expanded_count_, true);
   return result;
 }
 
 // 从起点沿 g 梯度贪心下降，局部一致性保证这条链指向目标
-nav_msgs::msg::Path DLitePlanner::extractPath(
-  nav2_costmap_2d::Costmap2D * cm,
-  const std::string & frame_id,
-  const rclcpp::Time & stamp) const
+nav_msgs::msg::Path DLitePlanner::extractPath(nav2_costmap_2d::Costmap2D * cm,
+  const std::string & frame_id, const rclcpp::Time & stamp) const
 {
   nav_msgs::msg::Path path;
   path.header.frame_id = frame_id;
-  path.header.stamp    = stamp;
+  path.header.stamp = stamp;
 
   std::vector<bool> visited(N_, false);
-  std::vector<int>  indices;
+  std::vector<int> indices;
   indices.reserve(static_cast<size_t>(std::max(W_, H_)) * 4);
 
   int cur = s_start_;
@@ -324,19 +328,23 @@ nav_msgs::msg::Path DLitePlanner::extractPath(
 
   while (cur != s_goal_) {
     const int cx = cur % W_, cy = cur / W_;
-    int   best      = -1;
+    int best = -1;
     float best_cost = INF;
 
     for (int d = 0; d < 8; ++d) {
       const int nx = cx + DX[d], ny = cy + DY[d];
-      if (nx < 0 || ny < 0 || nx >= W_ || ny >= H_) { continue; }
+      if (nx < 0 || ny < 0 || nx >= W_ || ny >= H_) {
+        continue;
+      }
       const int n = ny * W_ + nx;
       const float c = edgeCost(cur, n, d, cm);
-      if (c >= INF || g_[n] >= INF) { continue; }
+      if (c >= INF || g_[n] >= INF) {
+        continue;
+      }
       const float total = c + g_[n];
       if (total < best_cost) {
         best_cost = total;
-        best      = n;
+        best = n;
       }
     }
 
@@ -359,9 +367,9 @@ nav_msgs::msg::Path DLitePlanner::extractPath(
     double wx, wy;
     cm->mapToWorld(idx % W_, idx / W_, wx, wy);
     geometry_msgs::msg::PoseStamped pose;
-    pose.header            = path.header;
-    pose.pose.position.x   = wx;
-    pose.pose.position.y   = wy;
+    pose.header = path.header;
+    pose.pose.position.x = wx;
+    pose.pose.position.y = wy;
     pose.pose.orientation.w = 1.0;
     path.poses.push_back(pose);
   }
@@ -369,4 +377,4 @@ nav_msgs::msg::Path DLitePlanner::extractPath(
   return path;
 }
 
-}
+}  // namespace grid_planners

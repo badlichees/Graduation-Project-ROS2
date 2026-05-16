@@ -20,6 +20,7 @@ public:
 
 protected:
   float priority(float g, float h) const override { return g + w_ * h; }
+  void updateRuntimeParameters() override;
 
 private:
   float w_{2.0f};

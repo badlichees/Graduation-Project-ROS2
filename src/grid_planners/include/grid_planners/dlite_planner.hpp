@@ -25,37 +25,49 @@ public:
   DLitePlanner();
   ~DLitePlanner() override = default;
 
-  void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name,
+  void configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name,
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
-  void cleanup()    override {}
-  void activate()   override {}
-  void deactivate() override {}
+  void cleanup() override
+  {}
+  void activate() override
+  {}
+  void deactivate() override
+  {}
 
-  nav_msgs::msg::Path createPlan(
-    const geometry_msgs::msg::PoseStamped & start,
+  nav_msgs::msg::Path createPlan(const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 private:
   // 字典序 key 让主排序和稳定性排序分开表达
-  struct Key {
+  struct Key
+  {
     float k1{0.0f}, k2{0.0f};
-    bool operator<(const Key & o) const {
+    bool operator<(const Key & o) const
+    {
       return k1 < o.k1 || (k1 == o.k1 && k2 < o.k2);
     }
-    bool operator>(const Key & o) const { return o < *this; }
-    bool operator<=(const Key & o) const { return !(o < *this); }
+    bool operator>(const Key & o) const
+    {
+      return o < *this;
+    }
+    bool operator<=(const Key & o) const
+    {
+      return !(o < *this);
+    }
   };
 
   // 版本号让旧队列项自然失效
-  struct QEntry {
-    Key  key;
-    int  idx{-1};
-    int  ver{0};
-    bool operator>(const QEntry & o) const { return key > o.key; }
+  struct QEntry
+  {
+    Key key;
+    int idx{-1};
+    int ver{0};
+    bool operator>(const QEntry & o) const
+    {
+      return key > o.key;
+    }
   };
 
   using MinPQ = std::priority_queue<QEntry, std::vector<QEntry>, std::greater<QEntry>>;
@@ -67,27 +79,25 @@ private:
 
   Key calcKey(int s) const;
 
-  void  pqClean();
-  bool  pqEmpty();
-  Key   pqTopKey();
-  int   pqTopIdx();
-  void  pqPop();
-  void  pqInsert(int idx, Key k);
-  void  pqRemove(int idx);
+  void pqClean();
+  bool pqEmpty();
+  Key pqTopKey();
+  int pqTopIdx();
+  void pqPop();
+  void pqInsert(int idx, Key k);
+  void pqRemove(int idx);
 
   void initDLite(int goal_idx, nav2_costmap_2d::Costmap2D * cm);
   void updateVertex(int u, nav2_costmap_2d::Costmap2D * cm);
   void computeShortestPath(nav2_costmap_2d::Costmap2D * cm);
 
   // 搜索完成后只需沿代价梯度取路径
-  nav_msgs::msg::Path extractPath(
-    nav2_costmap_2d::Costmap2D * cm,
-    const std::string & frame_id,
+  nav_msgs::msg::Path extractPath(nav2_costmap_2d::Costmap2D * cm, const std::string & frame_id,
     const rclcpp::Time & stamp) const;
 
   std::vector<float> g_;
   std::vector<float> rhs_;
-  std::vector<int>   ver_;
+  std::vector<int> ver_;
   MinPQ pq_;
 
   float km_{0.0f};
@@ -102,18 +112,17 @@ private:
   std::vector<unsigned char> prev_cm_;
 
   bool allow_unknown_{true};
-  rclcpp_lifecycle::LifecycleNode::WeakPtr        node_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS>  costmap_ros_;
-  std::string  name_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::string name_;
   rclcpp::Logger logger_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr stats_pub_;
   int expanded_count_{0};
 
-  static constexpr float INF     = std::numeric_limits<float>::infinity();
-  static constexpr int   DX[8]   = {-1,  0,  1, -1,  1, -1,  0,  1};
-  static constexpr int   DY[8]   = {-1, -1, -1,  0,  0,  1,  1,  1};
-  static constexpr float STEP[8] = {1.414f, 1.0f, 1.414f, 1.0f,
-                                     1.0f, 1.414f, 1.0f, 1.414f};
+  static constexpr float INF = std::numeric_limits<float>::infinity();
+  static constexpr int DX[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  static constexpr int DY[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+  static constexpr float STEP[8] = {1.414f, 1.0f, 1.414f, 1.0f, 1.0f, 1.414f, 1.0f, 1.414f};
 };
 
-}
+}  // namespace grid_planners

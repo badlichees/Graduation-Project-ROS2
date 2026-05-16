@@ -3,7 +3,7 @@
 <package format="3">
   <name>grid_planners</name>
   <version>0.1.0</version>
-  <description>Grid-based global planner plugins for Nav2 (A*, Dijkstra, ...)</description>
+  <description>Nav2 网格全局规划器插件集（默认：A*、Dijkstra、GBFS、NavFn、RRT*、D* Lite、JPS、Weighted A*）</description>
   <maintainer email="liuzhili86@gmail.com">liuzhili</maintainer>
   <license>MIT</license>
 

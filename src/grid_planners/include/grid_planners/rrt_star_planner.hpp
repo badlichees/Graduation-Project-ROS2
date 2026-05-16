@@ -47,6 +47,7 @@ private:
   int nearestNode(const std::vector<Node> & nodes, double x, double y) const;
   std::vector<int> nearNodes(const std::vector<Node> & nodes, double x, double y) const;
   bool isCollisionFree(double x1, double y1, double x2, double y2) const;
+  void updateRuntimeParameters();
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

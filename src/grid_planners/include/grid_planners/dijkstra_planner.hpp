@@ -9,7 +9,9 @@ namespace grid_planners
 class DijkstraPlanner : public AStarPlanner
 {
 public:
-  DijkstraPlanner() : AStarPlanner("DijkstraPlanner") {}
+  DijkstraPlanner()
+  : AStarPlanner("DijkstraPlanner")
+  {}
   ~DijkstraPlanner() override = default;
 
 protected:
@@ -19,4 +21,4 @@ protected:
   }
 };
 
-}
+}  // namespace grid_planners
