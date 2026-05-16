@@ -1,3 +1,0 @@
-#!/usr/bin/env python3
-from tb3_unity_nav.map_relay import main
-main()

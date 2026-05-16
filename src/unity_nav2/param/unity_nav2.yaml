@@ -1,4 +1,4 @@
-# Unity 寻路测试使用的 Nav2 参数。
+# Unity 寻路测试使用的 Nav2 参数
 
 bt_navigator:
   ros__parameters:
@@ -8,7 +8,7 @@ bt_navigator:
     odom_topic: /odom
     bt_loop_duration: 10
     default_server_timeout: 20
-    default_nav_to_pose_bt_xml: "/home/badlichees/ros2_ws/install/tb3_unity_nav/share/tb3_unity_nav/behavior_trees/navigate_w_planner_selector.xml"
+    default_nav_to_pose_bt_xml: "$(find-pkg-share unity_nav2)/behavior_trees/navigate.xml"
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -86,10 +86,10 @@ controller_server:
       decel_lim_x: -2.5
       decel_lim_y: 0.0
       decel_lim_theta: -3.2
-      vx_samples: 20
+      vx_samples: 30
       vy_samples: 0
-      vtheta_samples: 30
-      sim_time: 1.0
+      vtheta_samples: 40
+      sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
       transform_tolerance: 0.2
@@ -98,13 +98,13 @@ controller_server:
       short_circuit_trajectory_evaluation: True
       stateful: False
       critics: ["Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
+      BaseObstacle.scale: 0.12
       PathAlign.scale: 12.0
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 8.0
       GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 32.0
-      GoalDist.scale: 32.0
+      PathDist.scale: 64.0
+      GoalDist.scale: 64.0
 
 controller_server_rclcpp_node:
   ros__parameters:
@@ -126,7 +126,7 @@ local_costmap:
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 1.0
+        inflation_radius: 0.55
         cost_scaling_factor: 3.0
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"

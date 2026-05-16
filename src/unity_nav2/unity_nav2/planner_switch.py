@@ -30,7 +30,9 @@ class PlannerSelectorRelay(Node):
             self.get_logger().info(f'planner → {msg.data}')
 
 
-def main():
-    rclpy.init()
-    rclpy.spin(PlannerSelectorRelay())
+def main(args=None):
+    rclpy.init(args=args)
+    node = PlannerSelectorRelay()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()

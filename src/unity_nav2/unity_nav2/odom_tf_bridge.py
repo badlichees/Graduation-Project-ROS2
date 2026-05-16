@@ -30,10 +30,11 @@ class OdomToTf(Node):
         self.tf_broadcaster.sendTransform(t)
 
 
-def main():
-    rclpy.init()
+def main(args=None):
+    rclpy.init(args=args)
     node = OdomToTf()
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 

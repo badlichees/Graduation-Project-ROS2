@@ -1,7 +1,6 @@
 <!--
-  navigate_to_pose with 1Hz replanning, recovery, and runtime planner selection.
-  Unity publishes the planner name to /planner_selector (std_msgs/String).
-  Default planner is "Astar". Supported: Astar, Dijkstra, Greedy, NavFn.
+  导航行为树：1Hz 重规划、故障恢复、运行时规划器切换
+  Unity 通过 /planner_selector 下发规划器名称，默认 Astar
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
