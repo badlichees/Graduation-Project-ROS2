@@ -4,7 +4,7 @@ package_name = 'ping_responder'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='0.1.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -13,15 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='badlichees',
-    maintainer_email='2442642595@qq.com',
-    description='Package for handling pong messages in latency testing',
-    license='TODO: License declaration',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
+    maintainer='liuzhili',
+    maintainer_email='liuzhili86@gmail.com',
+    description='延迟测试用 Pong 消息响应节点',
+    license='MIT',
     entry_points={
         'console_scripts': [
             'ping_responder = ping_responder.ping_responder:main',
