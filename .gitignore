@@ -12,6 +12,10 @@ __pycache__/
 
 # IDE
 .vscode/settings.json
+.vscode/browse.vc.db
+.vscode/browse.vc.db-shm
+.vscode/browse.vc.db-wal
+.vscode/c_cpp_properties.json
 .idea/
 *.swp
 *.swo
